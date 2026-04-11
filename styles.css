@@ -67,6 +67,8 @@ body {
   transition: opacity 0.4s ease, transform 0.4s ease;
   transform: translateY(20px);
   pointer-events: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .screen.active {

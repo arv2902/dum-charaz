@@ -27,6 +27,27 @@
     lastResult: { actorName: '', movieTitle: '', guessed: false }
   };
 
+  // ---- Utils ----
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  function showError(id, msg) {
+    console.error('ERROR:', msg);
+    const el = $(id);
+    if (el) { el.textContent = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 5000); }
+  }
+
+  function escapeHTML(str) {
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
+  }
+
+
   // ---- P2P Variables ----
   let peer = null;
   let connections = []; // Host: connections to clients
@@ -444,7 +465,7 @@
       if (!name) return alert("Enter name");
       state.myName = name;
       state.isHost = true;
-      state.roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      state.roomCode = generateCode();
       initPeer(state.roomCode, () => {
         state.players = [{ id: state.myId, name: state.myName, score: 0 }];
         showUI();
@@ -462,7 +483,7 @@
         const conn = peer.connect('DC-' + code);
         setupClientConnection(conn);
       });
-    });
+    };
 
     // Lobby
     $('btn-start-game').onclick = () => { if (state.isHost) startGame(); };
