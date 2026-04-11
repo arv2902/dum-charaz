@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Dumb Charades — Multiplayer movie guessing game. No server needed, works anywhere!">
+  <meta name="theme-color" content="#0f172a">
+  <title>🎬 Dumb Charades — P2P Online</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+</head>
+<body>
+
+  <!-- Floating Particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- ========== SCREEN 1: HOME ========== -->
+  <div class="screen active" id="screen-home">
+    <div class="welcome-content">
+      <div class="logo-icon">🎬</div>
+      <h1 class="game-title">Dumb Charades</h1>
+      <p class="game-subtitle">Serverless Multiplayer • Play Anywhere!</p>
+
+      <div class="input-group">
+        <input type="text" class="player-input" id="home-name" placeholder="Your name..." maxlength="15" autocomplete="off">
+      </div>
+
+      <div class="home-buttons" style="width:100%">
+        <button class="btn-primary" id="btn-create-room">🎮 Create Room</button>
+        <div class="divider-text">or</div>
+        <div class="join-row">
+          <input type="text" class="player-input room-code-input" id="home-room-code" placeholder="CODE" maxlength="6" autocomplete="off" style="text-transform:uppercase">
+          <button class="btn-secondary" id="btn-join-room">Join</button>
+        </div>
+      </div>
+
+      <div class="error-msg" id="home-error"></div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 2: LOBBY ========== -->
+  <div class="screen" id="screen-lobby">
+    <div class="players-content">
+      <h2 class="screen-title" style="margin-bottom:20px">🎯 Game Lobby</h2>
+
+      <div class="room-code-display">
+        <div class="room-code-label">Room Code (Share this)</div>
+        <div class="room-code-value" id="lobby-room-code">------</div>
+        <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
+      </div>
+
+      <!-- Settings (host only) -->
+      <div class="settings-card" id="lobby-settings">
+        <div class="setting-group">
+          <div class="setting-label">Complexity Level</div>
+          <div class="pill-group" id="difficulty-pills">
+            <button class="pill active" data-value="all">All</button>
+            <button class="pill" data-value="easy">Easy</button>
+            <button class="pill" data-value="medium">Medium</button>
+            <button class="pill" data-value="hard">Hard</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">Movie Type</div>
+          <div class="pill-group" id="language-pills">
+            <button class="pill active" data-value="all">All</button>
+            <button class="pill" data-value="bollywood">Bollywood</button>
+            <button class="pill" data-value="hollywood">Hollywood</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">Turn Timer</div>
+          <div class="pill-group" id="timer-pills">
+            <button class="pill" data-value="30">30s</button>
+            <button class="pill active" data-value="60">60s</button>
+            <button class="pill" data-value="90">90s</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-label" style="width:100%; margin-top:20px">Connected Players</div>
+      <ul class="player-list" id="lobby-player-list"></ul>
+
+      <div class="error-msg" id="lobby-error"></div>
+
+      <button class="btn-primary" id="btn-start-game" style="display:none">🎬 Start Game</button>
+      <p class="waiting-text" id="lobby-waiting">Waiting for host to start...</p>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 3: ACTOR TURN ========== -->
+  <div class="screen" id="screen-actor">
+    <div class="actor-content">
+      <div class="round-bar">
+        <div><span class="round-label">Turn</span> <span class="round-value" id="round-display">1/3</span></div>
+        <div><span class="round-label">Score</span> <span class="round-value" id="score-display">0</span></div>
+      </div>
+
+      <div class="actor-header" style="margin-bottom:20px">
+        <div class="setting-label">You Are Performing!</div>
+        <h2 class="game-title" id="actor-name" style="font-size:2rem">Player</h2>
+      </div>
+
+      <!-- Timer -->
+      <div class="timer-container" id="timer-container" style="display: none;">
+        <svg class="timer-ring" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#ef4444"/>
+            </linearGradient>
+          </defs>
+          <circle class="timer-ring-bg" cx="100" cy="100" r="90"/>
+          <circle class="timer-ring-progress" id="timer-progress" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="timer-text" id="timer-text">60</div>
+      </div>
+
+      <!-- Movie Card -->
+      <div class="movie-card" id="movie-card">
+        <div class="get-movie-prompt" id="movie-prompt">
+          <div class="emoji" style="font-size:40px">🎲</div>
+          <p>Ready to act?</p>
+        </div>
+        <div class="movie-reveal movie-hidden" id="movie-reveal" style="display:none">
+          <div class="movie-title-display" id="movie-title">TITLE</div>
+          <div class="movie-meta">
+            <span class="movie-tag year" id="movie-year">2023</span>
+            <span class="movie-tag language" id="movie-language">Bollywood</span>
+            <span class="movie-tag" id="movie-difficulty">Easy</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-get-movie">🎬 Get a Movie!</button>
+
+      <div class="actor-actions" id="actor-actions" style="display: none;">
+        <button class="btn-danger" id="btn-skip">Skip</button>
+        <button class="btn-success" id="btn-guessed">I Guessed It!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 4: GUESSER VIEW ========== -->
+  <div class="screen" id="screen-guesser">
+    <div class="guesser-content">
+      <div class="round-bar">
+        <div><span class="round-label">Turn</span> <span class="round-value" id="guesser-round">1/3</span></div>
+        <div><span class="round-label">Score</span> <span class="round-value" id="guesser-score">0</span></div>
+      </div>
+
+      <div class="guesser-performing" style="margin-bottom:30px">
+        <div class="logo-icon" style="font-size:50px">🎭</div>
+        <h2 id="guesser-actor-name" style="font-size:1.8rem">Player</h2>
+        <p style="color:var(--text-secondary)">is acting now...</p>
+      </div>
+
+      <!-- Timer -->
+      <div class="timer-container" id="guesser-timer-container" style="display:none;">
+        <svg class="timer-ring" viewBox="0 0 200 200">
+          <circle class="timer-ring-bg" cx="100" cy="100" r="90"/>
+          <circle class="timer-ring-progress" id="guesser-timer-progress" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="timer-text" id="guesser-timer-text">60</div>
+      </div>
+
+      <div class="waiting-card" id="guesser-waiting">
+        <div class="emoji" style="font-size:40px">⏳</div>
+        <p>Waiting for movie pick...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 5: TURN RESULT ========== -->
+  <div class="screen" id="screen-turn-result">
+    <div class="pass-content">
+      <div class="logo-icon" id="result-icon">🎉</div>
+      <h2 class="game-title" id="result-title">Success!</h2>
+      <p id="result-movie" style="margin:20px 0; font-size:1.2rem; font-weight:600"></p>
+      <p class="game-subtitle" id="result-next">Preparing next turn...</p>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN 6: SCOREBOARD ========== -->
+  <div class="screen" id="screen-scores">
+    <div class="scores-content">
+      <div class="logo-icon">🏆</div>
+      <h2 class="game-title">Final Scores</h2>
+      <p class="game-subtitle" id="winner-text"></p>
+
+      <ul class="score-list" id="score-list"></ul>
+
+      <div class="score-actions" id="score-actions-host" style="display:none; width:100%; gap:12px">
+        <button class="btn-secondary" id="btn-back-lobby">Lobby</button>
+        <button class="btn-primary" id="btn-play-again">Play Again</button>
+      </div>
+      <p class="waiting-text" id="score-waiting">Host is deciding...</p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="movies-data.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
