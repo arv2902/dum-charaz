@@ -351,6 +351,13 @@
     video.autoplay = true;
     video.playsInline = true;
     if (isLocal) { video.muted = true; video.style.transform = 'scale(-1, 1)'; }
+    
+    // Check spotlight immediately upon video creation
+    const actor = state.players[state.currentPlayerIndex];
+    if ((state.phase === 'ACTING' || state.phase === 'PICKING') && actor && actor.id === id) {
+      video.classList.add('spotlight');
+    }
+    
     container.appendChild(video);
   }
 
