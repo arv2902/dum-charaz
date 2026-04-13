@@ -396,3 +396,81 @@ button {
   .logo-icon { font-size: 60px; }
   .screen { padding: 16px; }
 }
+
+/* Video Chat UI */
+.video-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  pointer-events: none;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.video-container::-webkit-scrollbar { display: none; }
+
+video {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent-gold);
+  background: var(--bg-card);
+  pointer-events: auto;
+  box-shadow: var(--shadow);
+  transform: scale(1);
+  transition: transform 0.3s ease;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+video:hover {
+  transform: scale(1.1);
+}
+
+@keyframes popIn {
+  from { opacity:0; transform: scale(0.5); }
+  to { opacity:1; transform: scale(1); }
+}
+
+.video-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+
+.btn-video {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(5px);
+  color: white;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-video:hover {
+  background: var(--accent-gold);
+  color: black;
+  transform: scale(1.1);
+}
+
+.btn-video.muted {
+  background: var(--danger);
+  color: white;
+}

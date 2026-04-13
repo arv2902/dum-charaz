@@ -53,6 +53,10 @@
   let connections = []; // Host: connections to clients
   let hostConn = null;  // Client: connection to host
 
+  // ---- WebRTC Media ----
+  let localStream = null;
+  const activeCalls = new Set();
+
   // ---- DOM Elements ----
   const $ = (id) => document.getElementById(id);
   const screens = {
@@ -111,6 +115,21 @@
       if (!state.isHost) { conn.close(); return; }
       setupHostConnection(conn);
     });
+
+    peer.on('call', (call) => {
+      if (localStream) {
+        call.answer(localStream);
+      } else {
+        call.answer();
+      }
+      call.on('stream', (remoteStream) => {
+        addVideoStream(call.peer, remoteStream);
+      });
+      call.on('close', () => {
+        const v = $('vid-' + call.peer);
+        if (v) v.remove();
+      });
+    });
   }
 
   function setupHostConnection(conn) {
@@ -119,7 +138,26 @@
       conn.on('data', (data) => handleIncomingData(conn, data));
       conn.on('close', () => {
         connections = connections.filter(c => c !== conn);
-        state.players = state.players.filter(p => p.id !== conn.peer);
+        const playerIndex = state.players.findIndex(p => p.id === conn.peer);
+        if (playerIndex !== -1) {
+          state.players.splice(playerIndex, 1);
+          if (state.phase === 'ACTING' || state.phase === 'PICKING') {
+            if (playerIndex === state.currentPlayerIndex) {
+               if (ticker) clearInterval(ticker);
+               state.lastResult = { actorName: 'Disconnected Player', movieTitle: '???', guessed: false };
+               state.phase = 'RESULT';
+               setTimeout(() => {
+                 if (state.currentPlayerIndex >= state.players.length) state.phase = 'SCORES';
+                 else startRound();
+                 broadcastState();
+               }, 4000);
+            } else if (playerIndex < state.currentPlayerIndex) {
+               state.currentPlayerIndex--;
+            }
+          }
+        }
+        const v = $('vid-' + conn.peer);
+        if (v) v.remove();
         broadcastState();
       });
     });
@@ -292,12 +330,58 @@
 
   // ---- Logic: UI ----
 
+  async function setupMedia() {
+    if (localStream) return;
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      addVideoStream(state.myId, localStream, true);
+      $('video-controls').style.display = 'flex';
+      callMesh();
+    } catch (err) {
+      console.error("Failed to get local stream", err);
+    }
+  }
+
+  function addVideoStream(id, stream, isLocal=false) {
+    const container = $('video-container');
+    if ($('vid-' + id)) return;
+    const video = document.createElement('video');
+    video.id = 'vid-' + id;
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    if (isLocal) { video.muted = true; video.style.transform = 'scale(-1, 1)'; }
+    container.appendChild(video);
+  }
+
+  function callMesh() {
+    if (!localStream) return;
+    state.players.forEach(p => {
+      if (p.id !== state.myId && !activeCalls.has(p.id)) {
+        const call = peer.call(p.id, localStream);
+        if (call) {
+          activeCalls.add(p.id);
+          call.on('stream', (remoteStream) => {
+            addVideoStream(p.id, remoteStream);
+          });
+          call.on('close', () => {
+            const v = $('vid-' + p.id);
+            if (v) v.remove();
+            activeCalls.delete(p.id);
+          });
+        }
+      }
+    });
+  }
+
   function showScreen(id) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[id].classList.add('active');
   }
 
   function updateUI() {
+    callMesh();
+
     switch (state.phase) {
       case 'LOBBY':
         showLobby();
@@ -468,7 +552,7 @@
       state.roomCode = generateCode();
       initPeer(state.roomCode, () => {
         state.players = [{ id: state.myId, name: state.myName, score: 0 }];
-        showUI();
+        setupMedia().then(() => showUI());
       });
     };
 
@@ -482,6 +566,7 @@
       initPeer(null, () => {
         const conn = peer.connect('DC-' + code);
         setupClientConnection(conn);
+        setupMedia();
       });
     };
 
@@ -520,6 +605,23 @@
         $('btn-copy-code').textContent = '✅';
         setTimeout(() => $('btn-copy-code').textContent = '📋', 2000);
       });
+    };
+
+    $('btn-toggle-mic').onclick = () => {
+      if (!localStream) return;
+      const t = localStream.getAudioTracks()[0];
+      if (t) {
+        t.enabled = !t.enabled;
+        $('btn-toggle-mic').classList.toggle('muted', !t.enabled);
+      }
+    };
+    $('btn-toggle-cam').onclick = () => {
+      if (!localStream) return;
+      const t = localStream.getVideoTracks()[0];
+      if (t) {
+        t.enabled = !t.enabled;
+        $('btn-toggle-cam').classList.toggle('muted', !t.enabled);
+      }
     };
 
     // Settings
