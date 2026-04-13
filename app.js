@@ -382,6 +382,14 @@
   function updateUI() {
     callMesh();
 
+    // Spotlight logic
+    const actor = state.players[state.currentPlayerIndex];
+    document.querySelectorAll('#video-container video').forEach(v => v.classList.remove('spotlight'));
+    if ((state.phase === 'ACTING' || state.phase === 'PICKING') && actor) {
+      const vid = $('vid-' + actor.id);
+      if (vid) vid.classList.add('spotlight');
+    }
+
     switch (state.phase) {
       case 'LOBBY':
         showLobby();
